@@ -131,6 +131,9 @@ services:
       - ELASTICSEARCH_USERNAME=kibana_system
       - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}
       - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=config/certs/ca/ca.crt
+      - XPACK_SECURITY_ENCRYPTIONKEY=${ENCRYPTION_KEY}
+      - XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY=${ENCRYPTION_KEY}
+      - XPACK_REPORTING_ENCRYPTIONKEY=${ENCRYPTION_KEY}
     mem_limit: ${KB_MEM_LIMIT}
     healthcheck:
       test:
@@ -139,12 +142,41 @@ services:
       timeout: 10s
       retries: 120
 
+  metricbeat:
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      kibana:
+        condition: service_healthy
+    image: ${PROJECT_NAME}_metricbeat_image
+    pull_policy: build
+    container_name: ${PROJECT_NAME}_metricbeat_container
+    build:
+      context: .
+      dockerfile: dockerfiles/Dockerfile.metricbeat
+      args:
+        STACK_VERSION: ${STACK_VERSION}
+    user: "0"
+    volumes:
+      - certs:/usr/share/metricbeat/certs
+      - metricbeatdata:/usr/share/metricbeat/data
+      - "./config/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "/sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro"
+      - "/proc:/hostfs/proc:ro"
+      - "/:/hostfs:ro"
+    environment:
+      - ELASTIC_USER=elastic
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - ELASTIC_HOSTS=https://elasticsearch:9200
+      - KIBANA_HOSTS=http://kibana:5601
+      - LOGSTASH_HOSTS=http://logstash:9600
+
 volumes:
   certs:
   elasticsearchdata:
   kibanadata:
-  # metricbeatdata01:
-  #   driver: local
+  metricbeatdata:
   # filebeatdata01:
   #   driver: local
   # logstashdata01:
