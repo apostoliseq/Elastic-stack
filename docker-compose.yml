@@ -1,5 +1,5 @@
 services:
-  setup_service:
+  setup:
     image: ${PROJECT_NAME}_elasticsearch_image
     pull_policy: build
     container_name: ${PROJECT_NAME}_setup_container
@@ -31,13 +31,13 @@ services:
           "instances:\n"\
           "  - name: elasticsearch\n"\
           "    dns:\n"\
-          "      - elasticsearch_service\n"\
+          "      - elasticsearch\n"\
           "      - localhost\n"\
           "    ip:\n"\
           "      - 127.0.0.1\n"\
           "  - name: kibana\n"\
           "    dns:\n"\
-          "      - kibana_service\n"\
+          "      - kibana\n"\
           "      - localhost\n"\
           "    ip:\n"\
           "      - 127.0.0.1\n"\
@@ -50,9 +50,9 @@ services:
         find . -type d -exec chmod 750 \{\} \;;
         find . -type f -exec chmod 640 \{\} \;;
         echo "Waiting for Elasticsearch availability";
-        until curl -s --cacert config/certs/ca/ca.crt https://elasticsearch_service:9200 | grep -q "missing authentication credentials"; do sleep 30; done;
+        until curl -s --cacert config/certs/ca/ca.crt https://elasticsearch:9200 | grep -q "missing authentication credentials"; do sleep 30; done;
         echo "Setting kibana_system password";
-        until curl -s -X POST --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://elasticsearch_service:9200/_security/user/kibana_system/_password -d "{\"password\":\"${KIBANA_PASSWORD}\"}" | grep -q "^{}"; do sleep 10; done;
+        until curl -s -X POST --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://elasticsearch:9200/_security/user/kibana_system/_password -d "{\"password\":\"${KIBANA_PASSWORD}\"}" | grep -q "^{}"; do sleep 10; done;
         echo "All done!";
       '
     healthcheck:
@@ -61,9 +61,9 @@ services:
       timeout: 5s
       retries: 120
 
-  elasticsearch_service:
+  elasticsearch:
     depends_on:
-      setup_service:
+      setup:
         condition: service_healthy
     image: ${PROJECT_NAME}_elasticsearch_image
     pull_policy: build
@@ -107,9 +107,9 @@ services:
       timeout: 10s
       retries: 120
 
-  kibana_service:
+  kibana:
     depends_on:
-      elasticsearch_service:
+      elasticsearch:
         condition: service_healthy
     image: ${PROJECT_NAME}_kibana_image
     pull_policy: build
@@ -127,7 +127,7 @@ services:
     ports:
       - ${KIBANA_PORT}:5601
     environment:
-      - ELASTICSEARCH_HOSTS=https://elasticsearch_service:9200
+      - ELASTICSEARCH_HOSTS=https://elasticsearch:9200
       - ELASTICSEARCH_USERNAME=kibana_system
       - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}
       - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=config/certs/ca/ca.crt
