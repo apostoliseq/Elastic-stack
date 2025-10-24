@@ -199,14 +199,41 @@ services:
       - KIBANA_HOSTS=http://kibana:5601
       - LOGSTASH_HOSTS=http://logstash01:9600
 
+  logstash:
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      kibana:
+        condition: service_healthy
+    image: ${PROJECT_NAME}_logstash_image
+    pull_policy: build
+    container_name: ${PROJECT_NAME}_logstash_container
+    build:
+      context: .
+      dockerfile: dockerfiles/Dockerfile.logstash
+      args:
+        STACK_VERSION: ${LOGSTASH_VERSION}
+    # labels:
+    #   co.elastic.logs/module: logstash
+    user: "0"
+    volumes:
+      - certs:/usr/share/logstash/certs
+      - logstashdata:/usr/share/logstash/data
+      - "./config/logstash_ingest_data/:/usr/share/logstash/ingest_data/"
+      - "./config/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro"
+    environment:
+      - xpack.monitoring.enabled=false
+      - ELASTIC_USER=elastic
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - ELASTIC_HOSTS=https://elasticsearch:9200
+
 volumes:
   certs:
   elasticsearchdata:
   kibanadata:
   metricbeatdata:
   filebeatdata:
-  # logstashdata01:
-  #   driver: local
+  logstashdata:
 
 networks:
   default:
