@@ -73,8 +73,6 @@ services:
       dockerfile: dockerfiles/Dockerfile.elasticsearch
       args:
         STACK_VERSION: ${STACK_VERSION}
-    # labels:
-    #   co.elastic.logs/module: elasticsearch
     volumes:
       - certs:/usr/share/elasticsearch/config/certs
       - elasticsearchdata:/usr/share/elasticsearch/data
@@ -82,7 +80,6 @@ services:
       - ${ES_PORT}:9200
     environment:
       - node.name=elasticsearch
-      # - cluster.name=${CLUSTER_NAME}
       - discovery.type=single-node
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - bootstrap.memory_lock=true
@@ -119,8 +116,6 @@ services:
       dockerfile: dockerfiles/Dockerfile.kibana
       args:
         STACK_VERSION: ${STACK_VERSION}
-    # labels:
-    #   co.elastic.logs/module: kibana
     volumes:
       - certs:/usr/share/kibana/config/certs
       - kibanadata:/usr/share/kibana/data
@@ -213,8 +208,6 @@ services:
       dockerfile: dockerfiles/Dockerfile.logstash
       args:
         STACK_VERSION: ${LOGSTASH_VERSION}
-    # labels:
-    #   co.elastic.logs/module: logstash
     user: "0"
     volumes:
       - certs:/usr/share/logstash/certs
